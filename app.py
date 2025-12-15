@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
+import openpyxl
 
 # ============================================================
 # STREAMLIT CONFIG
@@ -18,51 +19,22 @@ if uploaded is None:
     st.info("Please upload an Excel (.xlsx) file to begin.")
     st.stop()
 
+# Reject old XLS files
+if uploaded.name.lower().endswith(".xls"):
+    st.error("This file is XLS (legacy). Please re-save as XLSX and upload again.")
+    st.stop()
+
 # ============================================================
-# READ EXCEL WITH MULTI-ROW HEADER
+# READ EXCEL EXACTLY ONCE (correct fix)
 # ============================================================
 try:
-    df_raw = pd.read_excel(uploaded, header=[0, 1])
+    df_raw = pd.read_excel(uploaded, header=[0, 1], engine="openpyxl")
 except Exception as e:
     st.error(f"Failed to read Excel file: {e}")
     st.stop()
 
 # ============================================================
-# 📥 SAFE & ROBUST EXCEL LOADING (Public-friendly)
-# ============================================================
-
-# Reject old .xls files (xlrd issue)
-if uploaded.name.lower().endswith(".xls"):
-    st.error("""
-    The uploaded file is an **.xls**, which is an unsupported Excel format.
-    Please re-save your file as **.xlsx** and upload again.
-    """)
-    st.stop()
-
-# Load .xlsx using openpyxl (Streamlit Cloud compatible)
-try:
-    df_raw = pd.read_excel(
-        uploaded,
-        header=[0, 1],
-        engine="openpyxl"
-    )
-except ImportError:
-    st.error("""
-    Missing dependency **openpyxl** on the server.
-
-    Please ensure your `requirements.txt` includes:
-    ```
-    openpyxl
-    ```
-    """)
-    st.stop()
-except Exception as e:
-    st.error(f"Failed to read Excel file using openpyxl: {e}")
-    st.stop()
-
-
-# ============================================================
-# FLATTEN HEADERS → AHU_Tag, RPM_1, Hz_1, Dp_1, RPM_2, Hz_2, Dp_2...
+# FLATTEN MULTI-LEVEL HEADERS
 # ============================================================
 flat_cols = []
 measurement_index = 1
@@ -70,59 +42,57 @@ measurement_index = 1
 for col in df_raw.columns:
     label1, label2 = col
 
-    if "Unnamed" in str(label1):  
+    # AHU Tag column
+    if "Unnamed" in str(label1) or str(label1).strip() == "":
         flat_cols.append("AHU_Tag")
         continue
 
+    # Valid metrics
     if label2 in ["RPM", "Hz", "Dp", "DP"]:
         flat_cols.append(f"{label2}_{measurement_index}")
     else:
         flat_cols.append(f"Col_{measurement_index}")
 
+    # Move to next measurement set after DP
     if label2 in ["Dp", "DP"]:
         measurement_index += 1
 
 df_raw.columns = flat_cols
 
-# Convert numerics
+# ============================================================
+# SAFE NUMERIC CONVERSION (AFTER flattening!)
+# ============================================================
 for c in df_raw.columns:
     if c != "AHU_Tag":
         df_raw[c] = pd.to_numeric(df_raw[c], errors="coerce")
 
 # ============================================================
-# DETECT MEASUREMENTS
+# DETECT MEASUREMENT SETS
 # ============================================================
-rpm_cols = sorted([c for c in df_raw.columns if c.startswith("RPM_")],
-                  key=lambda x: int(x.split("_")[1]))
+rpm_cols = sorted([c for c in df_raw.columns if c.startswith("RPM_")], key=lambda x: int(x.split("_")[1]))
+dp_cols = sorted([c for c in df_raw.columns if c.startswith("Dp_")], key=lambda x: int(x.split("_")[1]))
 
-dp_cols = sorted([c for c in df_raw.columns if c.startswith("Dp_") or c.startswith("DP_")],
-                 key=lambda x: int(x.split("_")[1]))
-
-if len(rpm_cols) < 2:
-    st.error("Need at least 2 RPM datasets.")
-    st.stop()
-
-if len(dp_cols) < 2:
-    st.error("Need at least 2 DP datasets.")
+if len(rpm_cols) < 2 or len(dp_cols) < 2:
+    st.error("Not enough data — need at least 2 dates (RPM + DP).")
     st.stop()
 
 latest = len(rpm_cols)
 previous = latest - 1
 
 # ============================================================
-# BUILD COMPARISON DF (LATEST 2 DATES)
+# BUILD COMPARISON DF
 # ============================================================
 df = pd.DataFrame()
 df["AHU_Tag"] = df_raw["AHU_Tag"]
 
 df["RPM_old"] = df_raw[f"RPM_{previous}"]
-df["DP_old"] = df_raw[f"{dp_cols[previous - 1]}"]
+df["DP_old"]  = df_raw[f"Dp_{previous}"]
 
 df["RPM_new"] = df_raw[f"RPM_{latest}"]
-df["DP_new"] = df_raw[f"{dp_cols[latest - 1]}"]
+df["DP_new"]  = df_raw[f"Dp_{latest}"]
 
 # ============================================================
-# RENSA NORMALIZATION MODEL
+# NORMALIZATION (RENSA LOGIC)
 # ============================================================
 RPM_BASELINE = 1030
 WARNING_DP = 0.63
@@ -131,19 +101,16 @@ EOL_DP = 0.84
 def normalize(dp, rpm):
     if rpm == 0 or pd.isna(rpm) or pd.isna(dp):
         return None
-    return dp * (RPM_BASELINE / rpm) ** 2
+    return dp * (RPM_BASELINE / rpm)**2
 
 df["DPnorm_1"] = df.apply(lambda r: normalize(r["DP_old"], r["RPM_old"]), axis=1)
 df["DPnorm_2"] = df.apply(lambda r: normalize(r["DP_new"], r["RPM_new"]), axis=1)
 df["DPnorm_change"] = df["DPnorm_2"] - df["DPnorm_1"]
 
-# ============================================================
-# ADD THIS MISSING LINE (correct location)
-# ============================================================
 df["RPM_change"] = df["RPM_new"] - df["RPM_old"]
 
 # ============================================================
-# CLASSIFICATION LOGIC
+# CLASSIFICATION
 # ============================================================
 def classify(dp):
     if pd.isna(dp):
@@ -175,7 +142,7 @@ page = st.sidebar.radio("Navigate Pages",
 # PAGE 1 — BAR CHART
 # ============================================================
 if page == "Page 1 – Bar Chart":
-    st.header("📊 Normalized DP Comparison (Previous vs Latest)")
+    st.header("📊 Normalized DP (Previous vs Latest)")
 
     fig, ax = plt.subplots(figsize=(22, 7))
 
@@ -190,25 +157,23 @@ if page == "Page 1 – Bar Chart":
     ax.set_xticks(x)
     ax.set_xticklabels(df["AHU_Tag"], rotation=90)
 
-    ax.set_ylabel("Normalized DP (1030 RPM baseline)")
+    ax.set_ylabel("Normalized DP (1030 RPM Baseline)")
     ax.set_title("DP Normalized Comparison")
-
     ax.legend()
     ax.grid(axis="y", alpha=0.3)
-
     st.pyplot(fig)
 
 # ============================================================
-# PAGE 2 — BUBBLE CHART (Quadrants)
+# PAGE 2 — BUBBLE CHART
 # ============================================================
 elif page == "Page 2 – Bubble Diagnostics":
-    st.header("🫧 Quadrant Bubble Chart – Normalized DP Change vs RPM Change")
+
+    st.header("🫧 Quadrant Bubble Chart — Δ Normalized DP vs Δ RPM")
 
     fig, ax = plt.subplots(figsize=(22, 10))
 
     bubble_size = (df["DPnorm_change"].abs() * 5000) + 200
 
-    # Colors
     bubble_colors = []
     for _, r in df.iterrows():
         if r["Status_new"] == "EOL – Replace Now":
@@ -220,53 +185,38 @@ elif page == "Page 2 – Bubble Diagnostics":
         else:
             bubble_colors.append("green")
 
-    # Scatter
     ax.scatter(
-        df["RPM_change"],
-        df["DPnorm_change"],
-        s=bubble_size,
-        c=bubble_colors,
-        alpha=0.65,
-        edgecolor="black"
+        df["RPM_change"], df["DPnorm_change"],
+        s=bubble_size, c=bubble_colors, alpha=0.65, edgecolor="black"
     )
 
-    # Label abnormal
     abnormal_df = df[df["Abnormal"] == True]
     for _, r in abnormal_df.iterrows():
-        ax.text(
-            r["RPM_change"],
-            r["DPnorm_change"],
-            r["AHU_Tag"],
-            fontsize=9,
-            weight="bold",
-            ha="center",
-            va="bottom"
-        )
+        ax.text(r["RPM_change"], r["DPnorm_change"], r["AHU_Tag"],
+                fontsize=9, weight="bold", ha="center", va="bottom")
 
-    # Quadrant lines
     ax.axhline(0, color="black", linewidth=1)
     ax.axvline(df["RPM_change"].median(), color="black", linewidth=1)
 
     ax.set_xlabel("RPM Change (Latest - Previous)")
     ax.set_ylabel("Δ Normalized DP")
-    ax.set_title("Quadrant Diagnostic Bubble Plot")
+    ax.set_title("Quadrant Bubble Diagnostic Plot")
     ax.grid(True, alpha=0.3)
 
-    # Legend
     import matplotlib.patches as Patch
     legend_elements = [
-        Patch.Patch(facecolor="green",  edgecolor="black", label="Normal"),
+        Patch.Patch(facecolor="green", edgecolor="black", label="Normal"),
         Patch.Patch(facecolor="orange", edgecolor="black", label="Warning – Replace Soon"),
-        Patch.Patch(facecolor="red",    edgecolor="black", label="EOL – Replace Now"),
-        Patch.Patch(facecolor="yellow", edgecolor="black", label="Abnormal Behavior"),
+        Patch.Patch(facecolor="red", edgecolor="black", label="EOL – Replace Now"),
+        Patch.Patch(facecolor="yellow", edgecolor="black", label="Abnormal"),
     ]
     ax.legend(handles=legend_elements, loc="upper left")
 
     st.pyplot(fig)
 
 # ============================================================
-# PAGE 3 — SUMMARY TABLE
+# PAGE 3 — TABLE
 # ============================================================
 else:
-    st.header("📄 Full Summary Table")
+    st.header("📄 Summary Table")
     st.dataframe(df)
