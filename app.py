@@ -28,6 +28,40 @@ except Exception as e:
     st.stop()
 
 # ============================================================
+# 📥 SAFE & ROBUST EXCEL LOADING (Public-friendly)
+# ============================================================
+
+# Reject old .xls files (xlrd issue)
+if uploaded.name.lower().endswith(".xls"):
+    st.error("""
+    The uploaded file is an **.xls**, which is an unsupported Excel format.
+    Please re-save your file as **.xlsx** and upload again.
+    """)
+    st.stop()
+
+# Load .xlsx using openpyxl (Streamlit Cloud compatible)
+try:
+    df_raw = pd.read_excel(
+        uploaded,
+        header=[0, 1],
+        engine="openpyxl"
+    )
+except ImportError:
+    st.error("""
+    Missing dependency **openpyxl** on the server.
+
+    Please ensure your `requirements.txt` includes:
+    ```
+    openpyxl
+    ```
+    """)
+    st.stop()
+except Exception as e:
+    st.error(f"Failed to read Excel file using openpyxl: {e}")
+    st.stop()
+
+
+# ============================================================
 # FLATTEN HEADERS → AHU_Tag, RPM_1, Hz_1, Dp_1, RPM_2, Hz_2, Dp_2...
 # ============================================================
 flat_cols = []
