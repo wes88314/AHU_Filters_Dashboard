@@ -1,0 +1,505 @@
+
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+.dash{padding:16px 0}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media(max-width:680px){.row2{grid-template-columns:1fr}}
+.section{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:16px;margin-bottom:14px}
+.section-title{font-size:11px;font-weight:500;color:var(--color-text-secondary);text-transform:uppercase;letter-spacing:.07em;margin-bottom:12px}
+.field label{display:block;font-size:12px;color:var(--color-text-secondary);margin-bottom:4px}
+.field select{width:100%;font-size:13px;padding:7px 10px;border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-md);background:var(--color-background-secondary);color:var(--color-text-primary)}
+.form-row{display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end}
+.form-row .field{flex:1;min-width:160px}
+.spec-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px}
+.spec-card{border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);padding:10px 12px}
+.spec-card.active{border-width:1.5px}
+.sc-title{font-size:12px;font-weight:500;margin-bottom:6px}
+.spec-row{display:flex;justify-content:space-between;font-size:11px;padding:2px 0;border-bottom:0.5px solid var(--color-border-tertiary)}
+.spec-row:last-child{border-bottom:none}
+.spec-row span{color:var(--color-text-secondary)}
+.spec-row strong{font-weight:500}
+
+/* ── Upload box ── */
+.drop-zone{border:1.5px dashed var(--color-border-secondary);border-radius:var(--border-radius-lg);padding:22px 16px;text-align:center;cursor:pointer;transition:border-color .2s,background .2s;background:var(--color-background-secondary)}
+.drop-zone:hover,.drop-zone.drag{border-color:#378ADD;background:var(--color-background-info)}
+.drop-zone svg{margin-bottom:8px;opacity:.5}
+.drop-zone .dz-title{font-size:13px;font-weight:500;color:var(--color-text-primary)}
+.drop-zone .dz-hint{font-size:11px;color:var(--color-text-secondary);margin-top:4px;line-height:1.5}
+.drop-zone .dz-file{font-size:12px;color:#378ADD;margin-top:6px;font-weight:500}
+.upload-pill{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:500;padding:5px 12px;border-radius:99px;border:0.5px solid var(--color-border-secondary);background:var(--color-background-secondary);color:var(--color-text-primary);cursor:pointer;transition:background .15s;margin-top:10px}
+.upload-pill:hover{background:var(--color-background-tertiary)}
+.upload-status{font-size:12px;margin-top:8px;padding:5px 10px;border-radius:var(--border-radius-md);display:none}
+.us-ok{background:#e7f4ec;color:#1d6e38;display:block}
+.us-err{background:#fdeaea;color:#9e2222;display:block}
+.us-warn{background:#fff3d6;color:#8a5200;display:block}
+
+.metric-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:10px;margin-bottom:14px}
+.metric{background:var(--color-background-secondary);border-radius:var(--border-radius-md);padding:11px 13px}
+.metric .lbl{font-size:11px;color:var(--color-text-secondary);margin-bottom:3px}
+.metric .val{font-size:20px;font-weight:500}
+.ok{color:#27864a}.warn{color:#c47800}.crit{color:#c43030}
+.status-badge{display:inline-flex;align-items:center;font-size:11px;font-weight:500;padding:2px 8px;border-radius:99px}
+.badge-ok{background:#e7f4ec;color:#1d6e38}
+.badge-warn{background:#fff3d6;color:#8a5200}
+.badge-crit{background:#fdeaea;color:#9e2222}
+.tabs{display:flex;gap:2px;margin-bottom:14px;flex-wrap:wrap}
+.tab{font-size:12px;font-weight:500;padding:5px 13px;border-radius:var(--border-radius-md);border:0.5px solid var(--color-border-tertiary);cursor:pointer;color:var(--color-text-secondary);background:transparent;transition:all .15s}
+.tab.active{background:var(--color-text-primary);color:var(--color-background-primary);border-color:transparent}
+.chart-wrap{position:relative;width:100%}
+.legend{display:flex;flex-wrap:wrap;gap:12px;font-size:11px;color:var(--color-text-secondary);margin-bottom:8px}
+.legend span{display:flex;align-items:center;gap:4px}
+.legend-dot{width:10px;height:10px;border-radius:2px;flex-shrink:0}
+.ahu-table{width:100%;border-collapse:collapse;font-size:11px}
+.ahu-table th{font-weight:500;color:var(--color-text-secondary);text-align:left;padding:6px 9px;border-bottom:0.5px solid var(--color-border-tertiary);white-space:nowrap}
+.ahu-table td{padding:5px 9px;border-bottom:0.5px solid var(--color-border-tertiary);color:var(--color-text-primary);white-space:nowrap}
+.ahu-table tr:last-child td{border-bottom:none}
+.ahu-table tr:hover td{background:var(--color-background-secondary)}
+.eol-bar-wrap{background:var(--color-border-tertiary);border-radius:4px;height:5px;width:72px}
+.eol-bar{height:5px;border-radius:4px}
+.reco-box{border-left:3px solid #378ADD;border-radius:0 var(--border-radius-md) var(--border-radius-md) 0;padding:9px 14px;font-size:12px;color:var(--color-text-primary);margin-top:8px;background:var(--color-background-secondary)}
+.reco-box strong{font-weight:500;display:block;margin-bottom:2px}
+.formula-tag{display:inline-block;font-size:11px;font-family:var(--font-mono,monospace);background:var(--color-background-secondary);border:0.5px solid var(--color-border-tertiary);border-radius:4px;padding:3px 8px;color:var(--color-text-secondary)}
+.null-note{font-size:10px;color:var(--color-text-tertiary);font-style:italic}
+</style>
+
+<div class="dash">
+
+<!-- TOP ROW: Config + Upload -->
+<div class="row2">
+
+  <!-- LEFT: Filter config -->
+  <div class="section">
+    <div class="section-title">Filter type & date</div>
+    <div class="form-row">
+      <div class="field">
+        <label>Filter type (all AHUs this batch)</label>
+        <select id="filterType" onchange="redraw()">
+          <option value="MERV13">Rensa MERV 13A</option>
+          <option value="VBANK">V-Bank</option>
+          <option value="GLOBAL">Global Standard</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Date to analyse</label>
+        <select id="dateIdx" onchange="redraw()"></select>
+      </div>
+    </div>
+    <div class="spec-grid" id="specCards"></div>
+    <div style="margin-top:10px;display:flex;flex-wrap:wrap;gap:6px">
+      <span class="formula-tag">DP_norm = DP_raw × (60 / Hz)²</span>
+      <span class="formula-tag">EoL = (1 − DP_norm / DP_replace) × life_days</span>
+    </div>
+  </div>
+
+  <!-- RIGHT: Upload -->
+  <div class="section">
+    <div class="section-title">Upload new recording</div>
+    <div class="drop-zone" id="dropZone"
+      onclick="document.getElementById('fileInput').click()"
+      ondragover="event.preventDefault();this.classList.add('drag')"
+      ondragleave="this.classList.remove('drag')"
+      ondrop="handleDrop(event)">
+      <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
+      </svg>
+      <div class="dz-title">Drop your Excel file here</div>
+      <div class="dz-hint">or click to browse · .xlsx / .xls / .csv<br>Same format as AHU_Filter_P_1.xlsx:<br>Row 1 = dates · Row 2 = RPM / Hz / Dp headers · Row 3+ = AHU data</div>
+      <div class="dz-file" id="dzFile"></div>
+      <input type="file" id="fileInput" accept=".xlsx,.xls,.csv" style="display:none" onchange="handleFile(this.files[0])">
+    </div>
+    <div class="upload-status" id="uploadStatus"></div>
+    <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+      <button class="upload-pill" onclick="document.getElementById('fileInput').click()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+        Browse file
+      </button>
+      <button class="upload-pill" onclick="resetToDefault()" style="color:var(--color-text-secondary)">
+        ↩ Reset to AHU_Filter_P_1 data
+      </button>
+    </div>
+    <div style="margin-top:10px;font-size:11px;color:var(--color-text-secondary)" id="dataSourceLabel">
+      Showing: <strong>AHU_Filter_P_1.xlsx</strong> — 32 AHUs · 5 dates
+    </div>
+  </div>
+</div>
+
+<!-- METRICS -->
+<div class="metric-row" id="metricRow" style="display:none"></div>
+
+<!-- MAIN CHART -->
+<div class="section" id="mainChartSection" style="display:none">
+  <div class="section-title" id="mainChartTitle"></div>
+  <div class="legend" id="mainLegend"></div>
+  <div class="chart-wrap" id="mainChartWrap"><canvas id="mainChart"></canvas></div>
+  <div style="margin-top:6px;font-size:11px;color:var(--color-text-secondary)" id="mainNote"></div>
+</div>
+
+<!-- SECONDARY TABS -->
+<div class="section" id="secSection" style="display:none">
+  <div class="tabs">
+    <button class="tab active" onclick="showTab('eol',this)">EoL days remaining</button>
+    <button class="tab" onclick="showTab('bubble',this)">Bubble chart</button>
+    <button class="tab" onclick="showTab('trend',this)">DP trend (all dates)</button>
+  </div>
+  <div class="legend" id="secLegend"></div>
+  <div class="chart-wrap" id="secChartWrap"><canvas id="secChart"></canvas></div>
+</div>
+
+<!-- TABLE -->
+<div class="section" id="tableSection" style="display:none">
+  <div class="section-title" id="tableTitle"></div>
+  <div style="overflow-x:auto">
+    <table class="ahu-table">
+      <thead><tr>
+        <th>AHU</th><th>Date used</th><th>Hz</th><th>DP raw</th>
+        <th>DP normalized</th><th>EoL days left</th><th>EoL bar</th><th>Status</th>
+      </tr></thead>
+      <tbody id="ahuBody"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- RECOMMENDATIONS -->
+<div class="section" id="recoSection" style="display:none"></div>
+
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script>
+// ── SPECS ─────────────────────────────────────────────────────────────────
+const SPECS={
+  MERV13:{name:'Rensa MERV 13A',warnDP:.84,replDP:1.26,life:270,color:'#378ADD'},
+  VBANK: {name:'V-Bank',        warnDP:.55,replDP:.76, life:630,color:'#27864a'},
+  GLOBAL:{name:'Global Standard',warnDP:.50,replDP:.75,life:540,color:'#888888'},
+};
+
+// ── DEFAULT DATA (AHU_Filter_P_1.xlsx) ───────────────────────────────────
+const DEFAULT_DATA={
+  dates:["3/26/2026","2/26/2026","1/14/2026","12/05/2025","10/29/2025"],
+  ahus:[{"id":"SAT80-COLO1-CE1_AHU01","readings":[{"hz":35.4,"dp":0.31},{"hz":33.1,"dp":0.25},{"hz":33.7,"dp":0.25},{"hz":29.0,"dp":0.16},{"hz":27.56,"dp":0.15}]},{"id":"SAT80-COLO1-CE1_AHU02","readings":[{"hz":32.4,"dp":0.25},{"hz":31.3,"dp":0.2},{"hz":31.2,"dp":0.19},{"hz":26.0,"dp":0.1},{"hz":25.5,"dp":0.1}]},{"id":"SAT80-COLO1-CE1_AHU03","readings":[{"hz":36.2,"dp":0.35},{"hz":35.9,"dp":0.27},{"hz":31.8,"dp":0.245},{"hz":29.0,"dp":0.16},{"hz":27.5,"dp":0.15}]},{"id":"SAT80-COLO1-CE1_AHU04","readings":[{"hz":36.9,"dp":0.36},{"hz":37.9,"dp":0.35},{"hz":34.8,"dp":0.255},{"hz":30.0,"dp":0.185},{"hz":28.8,"dp":0.175}]},{"id":"SAT80-COLO1-CE1_AHU05","readings":[{"hz":34.7,"dp":0.3},{"hz":35.8,"dp":0.28},{"hz":33.1,"dp":0.21},{"hz":28.5,"dp":0.15},{"hz":27.3,"dp":0.14}]},{"id":"SAT80-COLO1-CE1_AHU06","readings":[{"hz":34.9,"dp":0.3},{"hz":34.5,"dp":0.28},{"hz":32.5,"dp":0.25},{"hz":27.2,"dp":0.15},{"hz":27.4,"dp":0.15}]},{"id":"SAT80-COLO1-CE1_AHU07","readings":[{"hz":37.4,"dp":0.39},{"hz":38.0,"dp":0.35},{"hz":33.5,"dp":0.225},{"hz":30.4,"dp":0.0018},{"hz":27.8,"dp":0.15}]},{"id":"SAT80-COLO1-CE1_AHU08","readings":[{"hz":36.5,"dp":0.34},{"hz":36.1,"dp":0.3},{"hz":33.5,"dp":0.25},{"hz":31.3,"dp":0.175},{"hz":29.4,"dp":0.15}]},{"id":"SAT80-COLO1-CE2_AHU01","readings":[{"hz":39.6,"dp":0.45},{"hz":38.3,"dp":0.4},{"hz":35.3,"dp":0.3},{"hz":33.7,"dp":0.25},{"hz":37.9,"dp":0.3}]},{"id":"SAT80-COLO1-CE2_AHU02","readings":[{"hz":40.3,"dp":0.45},{"hz":39.3,"dp":0.39},{"hz":38.9,"dp":0.3},{"hz":34.7,"dp":0.25},{"hz":39.4,"dp":0.27}]},{"id":"SAT80-COLO1-CE2_AHU03","readings":[{"hz":37.0,"dp":0.41},{"hz":36.5,"dp":0.36},{"hz":35.7,"dp":0.275},{"hz":31.4,"dp":0.235},{"hz":36.6,"dp":0.27}]},{"id":"SAT80-COLO1-CE2_AHU04","readings":[{"hz":39.1,"dp":0.45},{"hz":38.1,"dp":0.36},{"hz":35.6,"dp":0.255},{"hz":33.2,"dp":0.2},{"hz":37.7,"dp":0.25}]},{"id":"SAT80-COLO1-CE2_AHU05","readings":[{"hz":38.1,"dp":0.45},{"hz":37.5,"dp":0.38},{"hz":36.7,"dp":0.285},{"hz":33.2,"dp":0.245},{"hz":37.6,"dp":0.28}]},{"id":"SAT80-COLO1-CE2_AHU06","readings":[{"hz":37.8,"dp":0.41},{"hz":36.7,"dp":0.35},{"hz":35.0,"dp":0.26},{"hz":31.7,"dp":0.21},{"hz":36.4,"dp":0.25}]},{"id":"SAT80-COLO1-CE2_AHU07","readings":[{"hz":38.2,"dp":0.55},{"hz":37.7,"dp":0.08},{"hz":36.0,"dp":0.0},{"hz":32.3,"dp":0.0},{"hz":36.9,"dp":0.1}]},{"id":"SAT80-COLO1-CE2_AHU08","readings":[{"hz":38.8,"dp":0.36},{"hz":38.0,"dp":0.3},{"hz":36.8,"dp":0.25},{"hz":32.8,"dp":0.2},{"hz":null,"dp":null}]},{"id":"SAT80-COLO1-CE3_AHU01","readings":[{"hz":38.4,"dp":0.36},{"hz":37.5,"dp":0.3},{"hz":32.9,"dp":0.25},{"hz":27.7,"dp":0.15},{"hz":22.1,"dp":0.11}]},{"id":"SAT80-COLO1-CE3_AHU02","readings":[{"hz":41.8,"dp":0.45},{"hz":41.2,"dp":0.38},{"hz":37.5,"dp":0.3},{"hz":32.0,"dp":0.22},{"hz":28.4,"dp":0.16}]},{"id":"SAT80-COLO1-CE3_AHU03","readings":[{"hz":39.6,"dp":0.2},{"hz":39.0,"dp":0.11},{"hz":34.4,"dp":0.165},{"hz":30.1,"dp":0.11},{"hz":27.4,"dp":0.1}]},{"id":"SAT80-COLO1-CE3_AHU04","readings":[{"hz":41.4,"dp":0.55},{"hz":40.2,"dp":0.48},{"hz":36.4,"dp":0.365},{"hz":29.9,"dp":0.24},{"hz":25.4,"dp":0.18}]},{"id":"SAT80-COLO1-CE3_AHU05","readings":[{"hz":42.0,"dp":0.5},{"hz":41.3,"dp":0.38},{"hz":36.7,"dp":0.315},{"hz":30.5,"dp":0.24},{"hz":28.8,"dp":0.2}]},{"id":"SAT80-COLO1-CE3_AHU06","readings":[{"hz":41.5,"dp":0.55},{"hz":40.8,"dp":0.48},{"hz":36.0,"dp":0.345},{"hz":31.1,"dp":0.245},{"hz":26.8,"dp":0.18}]},{"id":"SAT80-COLO1-CE3_AHU07","readings":[{"hz":38.5,"dp":0.4},{"hz":38.1,"dp":0.35},{"hz":34.7,"dp":0.275},{"hz":30.4,"dp":0.21},{"hz":24.8,"dp":0.18}]},{"id":"SAT80-COLO1-CE3_AHU08","readings":[{"hz":41.1,"dp":0.45},{"hz":39.6,"dp":0.4},{"hz":35.1,"dp":0.285},{"hz":30.2,"dp":0.2},{"hz":27.7,"dp":0.15}]},{"id":"SAT80-COLO1-CE4_AHU01","readings":[{"hz":37.4,"dp":0.325},{"hz":37.1,"dp":0.3},{"hz":33.8,"dp":0.25},{"hz":26.7,"dp":0.15},{"hz":27.1,"dp":0.15}]},{"id":"SAT80-COLO1-CE4_AHU02","readings":[{"hz":40.3,"dp":0.345},{"hz":38.7,"dp":0.4},{"hz":34.6,"dp":0.25},{"hz":28.7,"dp":0.175},{"hz":28.3,"dp":0.18}]},{"id":"SAT80-COLO1-CE4_AHU03","readings":[{"hz":37.3,"dp":null},{"hz":38.5,"dp":0.1},{"hz":35.3,"dp":0.1},{"hz":29.9,"dp":0.03},{"hz":28.6,"dp":0.35}]},{"id":"SAT80-COLO1-CE4_AHU04","readings":[{"hz":39.4,"dp":0.44},{"hz":38.5,"dp":0.38},{"hz":34.9,"dp":0.255},{"hz":28.6,"dp":0.19},{"hz":28.5,"dp":0.18}]},{"id":"SAT80-COLO1-CE4_AHU05","readings":[{"hz":44.1,"dp":null},{"hz":44.0,"dp":null},{"hz":40.1,"dp":0.05},{"hz":34.1,"dp":0.0},{"hz":33.9,"dp":0.0}]},{"id":"SAT80-COLO1-CE4_AHU06","readings":[{"hz":35.7,"dp":0.36},{"hz":38.1,"dp":0.35},{"hz":32.3,"dp":0.19},{"hz":28.6,"dp":0.16},{"hz":27.0,"dp":0.15}]},{"id":"SAT80-COLO1-CE4_AHU07","readings":[{"hz":37.2,"dp":0.43},{"hz":38.2,"dp":0.4},{"hz":34.9,"dp":0.295},{"hz":29.9,"dp":0.22},{"hz":29.6,"dp":0.2}]},{"id":"SAT80-COLO1-CE4_AHU08","readings":[{"hz":36.1,"dp":0.35},{"hz":35.7,"dp":0.3},{"hz":34.3,"dp":0.175},{"hz":27.3,"dp":0.125},{"hz":26.8,"dp":0.13}]}]
+};
+
+// ── STATE ─────────────────────────────────────────────────────────────────
+let DATASET = JSON.parse(JSON.stringify(DEFAULT_DATA));
+let currentTab='eol', mainChart=null, secChart=null;
+
+// ── HELPERS ───────────────────────────────────────────────────────────────
+const getSpec  = ()=> SPECS[document.getElementById('filterType').value];
+const getFtKey = ()=> document.getElementById('filterType').value;
+const getDateIdx= ()=> parseInt(document.getElementById('dateIdx').value);
+const normDP   = (dp,hz)=> hz>0 ? +(dp*Math.pow(60/hz,2)).toFixed(4) : dp;
+const getStatus= (dpN,s)=> dpN>=s.replDP?'critical':dpN>=s.warnDP?'warning':'ok';
+function eol(dpN,s){ const r=Math.min(dpN/s.replDP,1); return {ratio:+(r*100).toFixed(1),days:Math.max(0,Math.round((1-r)*s.life))}; }
+
+function getReading(ahu, dateIdx){
+  for(let i=dateIdx;i<ahu.readings.length;i++){
+    const r=ahu.readings[i];
+    if(r.dp!==null&&r.dp!==undefined&&r.hz!==null&&r.hz>0) return {...r,usedIdx:i,fallback:i>dateIdx};
+  }
+  return null;
+}
+
+function buildDateSelect(){
+  const sel=document.getElementById('dateIdx');
+  sel.innerHTML=DATASET.dates.map((d,i)=>`<option value="${i}">${d}${i===0?' — most recent':''}</option>`).join('');
+}
+
+// ── FILE UPLOAD ───────────────────────────────────────────────────────────
+function handleDrop(e){
+  e.preventDefault();
+  document.getElementById('dropZone').classList.remove('drag');
+  const f=e.dataTransfer.files[0];
+  if(f) handleFile(f);
+}
+
+function handleFile(f){
+  if(!f) return;
+  const setStatus=(msg,cls)=>{const el=document.getElementById('uploadStatus');el.className='upload-status '+cls;el.textContent=msg;};
+  setStatus('Parsing '+f.name+'…','us-warn');
+
+  const reader=new FileReader();
+  reader.onload=ev=>{
+    try{
+      const wb=f.name.toLowerCase().endsWith('.csv')
+        ? XLSX.read(ev.target.result,{type:'string'})
+        : XLSX.read(new Uint8Array(ev.target.result),{type:'array'});
+
+      const ws=wb.Sheets[wb.SheetNames[0]];
+      const rows=XLSX.utils.sheet_to_json(ws,{header:1,defval:null});
+
+      // Detect layout: row0=dates, row1=RPM/Hz/Dp headers, row2+=data
+      // Date columns at indices 1,4,7,10,13... (every 3 starting at 1)
+      const dateRow=rows[0]||[];
+      const headerRow=rows[1]||[];
+      const dataRows=rows.slice(2).filter(r=>r[0]);
+
+      // Find date group columns: col where header is RPM-like and col+1 Hz-like and col+2 Dp-like
+      const dateCols=[];
+      for(let c=1;c<headerRow.length;c+=3){
+        const h1=String(headerRow[c]||'').toLowerCase();
+        const h2=String(headerRow[c+1]||'').toLowerCase();
+        const h3=String(headerRow[c+2]||'').toLowerCase();
+        if((h1.includes('rpm')||h2.includes('hz')||h3.includes('dp')||h3.includes('p'))){
+          dateCols.push(c);
+        }
+      }
+      if(!dateCols.length){
+        // fallback: assume groups of 3 starting at col 1
+        for(let c=1;c+2<headerRow.length;c+=3) dateCols.push(c);
+      }
+
+      // Format date value
+      const fmtDate=v=>{
+        if(!v) return '?';
+        const s=String(v).replace(/\D/g,'');
+        if(s.length===7) return `${s[0]}/${s.slice(1,3)}/${s.slice(3)}`;
+        if(s.length===8) return `${s.slice(0,2)}/${s.slice(2,4)}/${s.slice(4)}`;
+        return String(v);
+      };
+      const dates=dateCols.map(c=>fmtDate(dateRow[c]));
+
+      const ahus=dataRows.map(row=>{
+        const id=String(row[0]);
+        const readings=dateCols.map((c,i)=>{
+          const tryFloat=x=>{ const v=parseFloat(x); return isNaN(v)?null:v; };
+          // col c=RPM, c+1=Hz, c+2=Dp
+          return {hz:tryFloat(row[c+1]), dp:tryFloat(row[c+2])};
+        });
+        return {id,readings};
+      });
+
+      DATASET={dates,ahus};
+      buildDateSelect();
+      document.getElementById('dzFile').textContent=f.name;
+      document.getElementById('dataSourceLabel').innerHTML=`Showing: <strong>${f.name}</strong> — ${ahus.length} AHUs · ${dates.length} dates`;
+      setStatus(`✓ Loaded ${ahus.length} AHUs across ${dates.length} dates from "${f.name}"`, 'us-ok');
+      redraw();
+    }catch(err){
+      document.getElementById('uploadStatus').className='upload-status us-err';
+      document.getElementById('uploadStatus').textContent='Parse error: '+err.message;
+    }
+  };
+  if(f.name.toLowerCase().endsWith('.csv')) reader.readAsText(f);
+  else reader.readAsArrayBuffer(f);
+}
+
+function resetToDefault(){
+  DATASET=JSON.parse(JSON.stringify(DEFAULT_DATA));
+  buildDateSelect();
+  document.getElementById('dzFile').textContent='';
+  document.getElementById('dataSourceLabel').innerHTML='Showing: <strong>AHU_Filter_P_1.xlsx</strong> — 32 AHUs · 5 dates';
+  document.getElementById('uploadStatus').className='upload-status';
+  document.getElementById('fileInput').value='';
+  redraw();
+}
+
+// ── COMPUTE ───────────────────────────────────────────────────────────────
+function computeAll(){
+  const spec=getSpec(), dIdx=getDateIdx();
+  return DATASET.ahus.map(ahu=>{
+    const r=getReading(ahu,dIdx);
+    if(!r) return {id:ahu.id,noData:true,readings:ahu.readings};
+    const dpN=normDP(r.dp,r.hz);
+    const {ratio,days}=eol(dpN,spec);
+    return {id:ahu.id,date:DATASET.dates[r.usedIdx],hz:r.hz,dpRaw:r.dp,dpNorm:dpN,ratio,days,status:getStatus(dpN,spec),fallback:r.fallback,readings:ahu.readings};
+  });
+}
+
+// ── SPEC CARDS ────────────────────────────────────────────────────────────
+function updateSpecCards(){
+  const ftKey=getFtKey();
+  document.getElementById('specCards').innerHTML=Object.entries(SPECS).map(([k,s])=>`
+    <div class="spec-card${k===ftKey?' active':''}" style="border-color:${k===ftKey?s.color:'var(--color-border-tertiary)'}">
+      <div class="sc-title" style="color:${s.color}">${s.name}</div>
+      <div class="spec-row"><span>Warning</span><strong style="color:#c47800">${s.warnDP}"</strong></div>
+      <div class="spec-row"><span>Replace</span><strong style="color:#c43030">${s.replDP}"</strong></div>
+      <div class="spec-row"><span>Life</span><strong>${s.life}d</strong></div>
+    </div>`).join('');
+}
+
+// ── REDRAW ────────────────────────────────────────────────────────────────
+function redraw(){
+  updateSpecCards();
+  const spec=getSpec(), data=computeAll();
+  const valid=data.filter(a=>!a.noData);
+  const crits=valid.filter(a=>a.status==='critical').length;
+  const warns=valid.filter(a=>a.status==='warning').length;
+  const minEoL=valid.length?Math.min(...valid.map(a=>a.days)):0;
+  const avgNorm=valid.length?(valid.reduce((s,a)=>s+a.dpNorm,0)/valid.length).toFixed(3):0;
+
+  ['metricRow','mainChartSection','secSection','tableSection','recoSection'].forEach(id=>{
+    document.getElementById(id).style.display='';
+  });
+
+  document.getElementById('metricRow').innerHTML=`
+    <div class="metric"><div class="lbl">AHUs</div><div class="val">${valid.length}</div></div>
+    <div class="metric"><div class="lbl">Must replace</div><div class="val crit">${crits}</div></div>
+    <div class="metric"><div class="lbl">Warning</div><div class="val warn">${warns}</div></div>
+    <div class="metric"><div class="lbl">Normal</div><div class="val ok">${valid.length-crits-warns}</div></div>
+    <div class="metric"><div class="lbl">Avg DP norm</div><div class="val">${avgNorm}"</div></div>
+    <div class="metric"><div class="lbl">Min EoL left</div><div class="val ${minEoL<30?'crit':minEoL<90?'warn':'ok'}">${minEoL}d</div></div>`;
+
+  renderMainChart(valid,spec);
+  renderSecChart(currentTab,valid,spec);
+  renderTable(data,spec);
+  renderReco(valid,spec);
+}
+
+// ── MAIN CHART ────────────────────────────────────────────────────────────
+function renderMainChart(data,spec){
+  if(mainChart){mainChart.destroy();mainChart=null;}
+  const sorted=[...data].sort((a,b)=>b.dpNorm-a.dpNorm);
+  const isDark=matchMedia('(prefers-color-scheme: dark)').matches;
+  const tc=isDark?'#c2c0b6':'#73726c', gc=isDark?'rgba(255,255,255,0.07)':'rgba(0,0,0,0.07)';
+  document.getElementById('mainChartWrap').style.height=Math.max(320,sorted.length*11+120)+'px';
+  document.getElementById('mainChartTitle').textContent=`Normalized DP — ${spec.name} thresholds`;
+  document.getElementById('mainNote').textContent=
+    `DP_norm = DP_raw × (60/Hz)²  ·  Warning: ${spec.warnDP}"  ·  Replace: ${spec.replDP}"  ·  Life: ${spec.life}d  ·  Date: ${DATASET.dates[getDateIdx()]}`;
+  document.getElementById('mainLegend').innerHTML=`
+    <span><span class="legend-dot" style="background:${spec.color}"></span>Normal</span>
+    <span><span class="legend-dot" style="background:#EF9F27"></span>Warning ≥${spec.warnDP}"</span>
+    <span><span class="legend-dot" style="background:#c43030"></span>Replace ≥${spec.replDP}"</span>`;
+
+  const threshPlugin={id:'thr',afterDraw(ch){
+    const{ctx,scales:{y}}=ch;if(!y)return;
+    [[spec.warnDP,'#c47800'],[spec.replDP,'#c43030']].forEach(([v,col])=>{
+      const yp=y.getPixelForValue(v);
+      ctx.save();ctx.strokeStyle=col;ctx.lineWidth=1.5;ctx.setLineDash([6,4]);
+      ctx.beginPath();ctx.moveTo(ch.chartArea.left,yp);ctx.lineTo(ch.chartArea.right,yp);ctx.stroke();
+      ctx.font='500 10px sans-serif';ctx.fillStyle=col;ctx.textAlign='right';
+      ctx.fillText(v+'"',ch.chartArea.right-4,yp-3);ctx.restore();
+    });
+  }};
+
+  mainChart=new Chart(document.getElementById('mainChart'),{
+    type:'bar',plugins:[threshPlugin],
+    data:{
+      labels:sorted.map(a=>a.id.replace('SAT80-COLO1-','')),
+      datasets:[{data:sorted.map(a=>+a.dpNorm.toFixed(4)),
+        backgroundColor:sorted.map(a=>a.status==='critical'?'#c43030cc':a.status==='warning'?'#EF9F27cc':spec.color+'cc'),
+        borderColor:sorted.map(a=>a.status==='critical'?'#c43030':a.status==='warning'?'#EF9F27':spec.color),
+        borderWidth:1,borderRadius:2}]
+    },
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>{
+        const a=sorted[c.dataIndex];
+        return[`DP norm: ${c.raw}"`,`DP raw: ${a.dpRaw}"  Hz: ${a.hz}`,`EoL: ${a.days}d`];
+      }}}},
+      scales:{
+        x:{ticks:{color:tc,font:{size:10},maxRotation:65,autoSkip:false},grid:{color:gc}},
+        y:{title:{display:true,text:'Normalized DP (in. wc)',color:tc},ticks:{color:tc},grid:{color:gc},
+           min:0,max:+(Math.max(spec.replDP*1.12,...data.map(a=>a.dpNorm))*1.05).toFixed(2)}
+      }}
+  });
+}
+
+// ── SECONDARY ─────────────────────────────────────────────────────────────
+function showTab(tab,el){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');currentTab=tab;
+  renderSecChart(tab,computeAll().filter(a=>!a.noData),getSpec());
+}
+
+function renderSecChart(tab,data,spec){
+  if(secChart){secChart.destroy();secChart=null;}
+  const isDark=matchMedia('(prefers-color-scheme: dark)').matches;
+  const tc=isDark?'#c2c0b6':'#73726c', gc=isDark?'rgba(255,255,255,0.07)':'rgba(0,0,0,0.07)';
+  const wh=document.getElementById('secChartWrap'), lg=document.getElementById('secLegend');
+
+  if(tab==='eol'){
+    const s=[...data].sort((a,b)=>a.days-b.days);
+    wh.style.height=Math.max(260,s.length*10+80)+'px';
+    lg.innerHTML=`<span><span class="legend-dot" style="background:#c43030"></span>&lt;30d</span><span><span class="legend-dot" style="background:#EF9F27"></span>&lt;90d</span><span><span class="legend-dot" style="background:#27864a"></span>normal</span>`;
+    secChart=new Chart(document.getElementById('secChart'),{type:'bar',data:{
+      labels:s.map(a=>a.id.replace('SAT80-COLO1-','')),
+      datasets:[{data:s.map(a=>a.days),borderRadius:2,
+        backgroundColor:s.map(a=>a.days<30?'#c43030':a.days<90?'#EF9F27':'#27864a')}]
+    },options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},
+      tooltip:{callbacks:{label:c=>`${c.raw} days remaining`}}},
+      scales:{x:{ticks:{color:tc,font:{size:10},maxRotation:65,autoSkip:false},grid:{color:gc}},
+              y:{title:{display:true,text:'Days remaining',color:tc},ticks:{color:tc},grid:{color:gc},min:0}}}});
+  }
+  else if(tab==='bubble'){
+    wh.style.height='380px';
+    lg.innerHTML=`<span><span class="legend-dot" style="background:${spec.color}"></span>Normal</span><span><span class="legend-dot" style="background:#EF9F27"></span>Warning</span><span><span class="legend-dot" style="background:#c43030"></span>Critical</span><span style="color:${tc}">X = EoL days · Y = DP norm · size = DP used %</span>`;
+    const maxR=Math.max(...data.map(a=>a.ratio),1);
+    secChart=new Chart(document.getElementById('secChart'),{type:'bubble',data:{datasets:[{
+      data:data.map(a=>({x:a.days,y:+a.dpNorm.toFixed(4),r:Math.max(5,(a.ratio/maxR)*26+4),id:a.id.replace('SAT80-COLO1-','')})),
+      backgroundColor:data.map(a=>a.status==='critical'?'#c43030bb':a.status==='warning'?'#EF9F27bb':spec.color+'bb'),
+      borderColor:data.map(a=>a.status==='critical'?'#c43030':a.status==='warning'?'#EF9F27':spec.color),
+      borderWidth:1
+    }]},options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>`${c.raw.id}  DP:${c.raw.y}"  EoL:${c.raw.x}d`}}},
+      scales:{
+        x:{title:{display:true,text:'EoL days remaining',color:tc},ticks:{color:tc},grid:{color:gc},min:-5},
+        y:{title:{display:true,text:'Normalized DP (in. wc)',color:tc},ticks:{color:tc},grid:{color:gc},min:0,
+           max:+(Math.max(spec.replDP*1.1,...data.map(a=>a.dpNorm))*1.1).toFixed(2)}
+      }}});
+  }
+  else if(tab==='trend'){
+    wh.style.height='340px';
+    lg.innerHTML=`<span>Normalized DP trend across all dates — one line per AHU (oldest → newest)</span>`;
+    const palette=['#378ADD','#27864a','#c43030','#EF9F27','#888','#637DD4','#E24B4A','#1D9E75','#c47800','#9b59b6'];
+    const reversedDates=[...DATASET.dates].reverse();
+    secChart=new Chart(document.getElementById('secChart'),{type:'line',data:{
+      labels:reversedDates,
+      datasets:DATASET.ahus.map((ahu,i)=>({
+        label:ahu.id.replace('SAT80-COLO1-',''),
+        data:reversedDates.map((_,di)=>{
+          const r=ahu.readings[DATASET.dates.length-1-di];
+          if(!r||r.dp===null||r.hz===null||r.hz<=0) return null;
+          return +normDP(r.dp,r.hz).toFixed(4);
+        }),
+        borderColor:palette[i%palette.length]+'99',
+        backgroundColor:'transparent',
+        borderWidth:1.2,pointRadius:2,spanGaps:true,tension:0.3
+      }))
+    },options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>`${c.dataset.label}: ${c.raw}"`}}},
+      scales:{x:{ticks:{color:tc,font:{size:11}},grid:{color:gc}},
+              y:{title:{display:true,text:'DP normalized (in. wc)',color:tc},ticks:{color:tc},grid:{color:gc},min:0}}}});
+  }
+}
+
+// ── TABLE ─────────────────────────────────────────────────────────────────
+function renderTable(data,spec){
+  document.getElementById('tableTitle').textContent=`AHU detail — ${spec.name} · ${DATASET.dates[getDateIdx()]}`;
+  document.getElementById('ahuBody').innerHTML=[...data].sort((a,b)=>{
+    if(a.noData)return 1;if(b.noData)return-1;return b.dpNorm-a.dpNorm;
+  }).map(a=>{
+    if(a.noData)return`<tr><td style="font-weight:500">${a.id.replace('SAT80-COLO1-','')}</td><td colspan="7" class="null-note">No valid data</td></tr>`;
+    const bc=a.status==='critical'?'badge-crit':a.status==='warning'?'badge-warn':'badge-ok';
+    const bl=a.status==='critical'?'Replace now':a.status==='warning'?'Warning':'Normal';
+    const dc=a.days<30?'#c43030':a.days<90?'#c47800':'inherit';
+    const bc2=a.status==='critical'?'#c43030':a.status==='warning'?'#EF9F27':'#27864a';
+    return`<tr>
+      <td style="font-weight:500">${a.id.replace('SAT80-COLO1-','')}${a.fallback?`<span class="null-note"> ↩${a.date}</span>`:''}</td>
+      <td>${a.date}</td><td>${a.hz.toFixed(1)} Hz</td><td>${a.dpRaw.toFixed(3)}"</td>
+      <td style="font-weight:500">${a.dpNorm.toFixed(3)}"</td>
+      <td style="font-weight:500;color:${dc}">${a.days}d</td>
+      <td><div class="eol-bar-wrap"><div class="eol-bar" style="width:${Math.min(a.ratio,100)}%;background:${bc2}"></div></div></td>
+      <td><span class="status-badge ${bc}">${bl}</span></td>
+    </tr>`;
+  }).join('');
+}
+
+// ── RECOMMENDATIONS ───────────────────────────────────────────────────────
+function renderReco(data,spec){
+  const critA=data.filter(a=>a.status==='critical');
+  const warnA=data.filter(a=>a.status==='warning');
+  const soon=data.filter(a=>a.status==='ok'&&a.days<60);
+  let html=`<div class="section-title">Recommended actions — ${spec.name}</div>`;
+  if(critA.length) html+=`<div class="reco-box" style="border-color:#c43030"><strong>Replace immediately — ${critA.length} unit(s)</strong>DP_norm ≥ ${spec.replDP}". Schedule before next shift.<br><span style="font-size:11px;color:var(--color-text-secondary)">${critA.map(a=>`${a.id.replace('SAT80-COLO1-','')} (${a.dpNorm.toFixed(3)}", ${a.days}d left)`).join(' · ')}</span></div>`;
+  if(warnA.length) html+=`<div class="reco-box" style="border-color:#c47800"><strong>Plan replacement — ${warnA.length} unit(s)</strong>DP_norm ≥ ${spec.warnDP}". Order stock, schedule PM.<br><span style="font-size:11px;color:var(--color-text-secondary)">${warnA.map(a=>`${a.id.replace('SAT80-COLO1-','')} (${a.dpNorm.toFixed(3)}", ${a.days}d left)`).join(' · ')}</span></div>`;
+  if(soon.length) html+=`<div class="reco-box" style="border-color:#888"><strong>Order soon — ${soon.length} unit(s) &lt;60 days remaining</strong><br><span style="font-size:11px;color:var(--color-text-secondary)">${soon.map(a=>`${a.id.replace('SAT80-COLO1-','')} (${a.days}d)`).join(' · ')}</span></div>`;
+  if(!critA.length&&!warnA.length&&!soon.length) html+=`<div class="reco-box"><strong>All units within normal range</strong>Continue routine monitoring.</div>`;
+  html+=`<div style="margin-top:10px;font-size:11px;color:var(--color-text-secondary)">DP_norm = DP_raw × (60/Hz)²  ·  EoL = (1 − DP_norm/${spec.replDP}") × ${spec.life}d</div>`;
+  document.getElementById('recoSection').innerHTML=html;
+}
+
+// ── INIT ─────────────────────────────────────────────────────────────────
+buildDateSelect();
+updateSpecCards();
+redraw();
+</script>
